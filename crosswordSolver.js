@@ -10,7 +10,7 @@ function crosswordSolver(crossword, words) {
 
     // Check for duplicate words 
     if (Array.isArray(words) && hasDuplicates(words)) {
-        return 'Error';
+        return 'Error: Duplicate words found';
     }   
  
     // Count total number of word start positions in the crossword
@@ -24,11 +24,11 @@ function crosswordSolver(crossword, words) {
 
     // Ensure number of start positions matches number of words
     if (startPositions !== words.length){
-        return 'Error';
+        return 'Error: Number of words does not match the number of start positions';
     }
 
     if (invalidCrossword || invalidWords) {
-        return 'Error';
+        return 'Error: Invalid crossword format or words array';
     }
 
     // Convert crossword into array
@@ -130,7 +130,7 @@ function crosswordSolver(crossword, words) {
     
     // Attempt to place all words
     if (!addWords(words)) {
-        return "Error"
+        return 'Error: Could not place all words';
     }
 
     // Convert solution grid back to string format
