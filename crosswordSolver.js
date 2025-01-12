@@ -1,28 +1,29 @@
 // Function that solves the crossword.
 function crosswordSolver(crossword, words) {
-    // Input validation for crossword
-    const invalidCrossword = typeof crossword !== 'string' || !/^[.\n012]+$/.test(crossword);
+    // Check if crossword is a valid string containing only dots, newlines, and numbers 0-2
+    const invalidCrossword = typeof crossword !== "string" || !/^[.\n012]+$/.test(crossword);
     
-    // Input validation for words array
+    // Validate words array: must be array, have at least 3 words, all elements must be strings
     const invalidWords = !Array.isArray(words) || 
         words.length < 3 || 
-        words.some((word) => typeof word !== 'string');
+        words.some((word) => typeof word !== "string");
 
-    // Check for duplicates in words array
+    // Check for duplicate words 
     if (Array.isArray(words) && hasDuplicates(words)) {
         return 'Error';
     }   
-
-    // Count start positions in crossword
+ 
+    // Count total number of word start positions in the crossword
     let startPositions = 0;
     for (let i = 0; i < crossword.length; i++) {
-        if (crossword[i] > '0' && crossword[i] !== '.') {
+        // Only count numbers greater than 0 (1 or 2)
+        if (crossword[i] > '0' && crossword[i] != '.'){
             startPositions += parseInt(crossword[i]);
         }
     }
-    
-    // Validate start positions match words length
-    if (startPositions !== words.length) {
+
+    // Ensure number of start positions matches number of words
+    if (startPositions !== words.length){
         return 'Error';
     }
 
@@ -30,149 +31,116 @@ function crosswordSolver(crossword, words) {
         return 'Error';
     }
 
-    // Check for duplicates in words array
-    if (hasDuplicates(words)) {
-        return 'Error';
-    }
-
-    // Convert crossword string to 2D array
+    // Convert crossword into array
     function convertTemplateToGrid(input) {
-        return input.trim()
-            .split('\n')
-            .map((row) => 
-                row.split('').map((char) => 
-                    char === '.' ? -1 : parseInt(char, 10)
-                )
-            );
+        // Split input into rows
+        const rows = input.trim().split("\n")
+
+        // Convert each row into array of numbers
+        const cross = rows.map((row) => {
+            // Split row into individual characters
+            const chars = row.split("")
+
+            // Convert characters to numbers (-1 for dots)
+            const numbers = chars.map((char) => {
+                return char === "." ? -1 : parseInt(char);
+            })
+            return numbers
+        })
+        return cross
     }
 
     // Parse input crossword into grid
-    const grid = convertTemplateToGrid(crossword);
+    const grid = convertTemplateToGrid(crossword)
 
-    // Create parallel array for placed words
-    const placedWords = grid.map((row) =>
-        row.map((cell) => (cell === -1 ? '.' : ''))
-    );
-
-    // Recursive function to add words
+    // Create parallel grid for placed words, initialize with dots and empty spaces
+    const placedWords = grid.map((row) => row.map((char) => (char === -1 ? "." : "")))
+    
+    // Recursive function to add words in the grid
     const addWords = (words, currentInd = 0) => {
         // Base case - all words placed successfully
         if (currentInd === words.length) {
-            return true;
+            return true
         }
 
-        const word = words[currentInd];
+        // Get current word to place
+        const word = words[currentInd]
 
         // Loop through each position in the grid
-        for (let x = 0; x < grid.length; x++) {
-            for (let y = 0; y < grid[0].length; y++) {
+        for (let rowInd = 0; rowInd < grid.length; rowInd++) {
+            for (let colInd = 0; colInd < grid[0].length; colInd++) {
                 // Skip positions marked as 0
-                if (grid[x][y] === 0) {
-                    continue;
+                if (grid[rowInd][colInd] === 0) {
+                    continue
                 }
 
-                // Try placing word horizontally and vertically
-                if (tryPlaceWordInDirection(word, x, y, true) || 
-                    tryPlaceWordInDirection(word, x, y, false)) {
-                    if (addWords(words, currentInd + 1)) {
-                        return true;
+                // Current position being tried
+                const char = {
+                    row: rowInd,
+                    col: colInd,
+                }
+
+                // Try placing word in a specific direction
+                function directOfWord(direction) {
+                    // Store characters that get modified for backtracking
+                    const otherschars = []
+
+                    // Try placing each character of the word
+                    for (let i = 0; i < word.length; i++) {
+                        // Calculate position based on direction
+                        const row = direction === "x" ? char.row : char.row + i
+                        const col = direction === "x" ? char.col + i : char.col
+
+                        // Check if placement is valid
+                        if (
+                            row >= grid.length ||
+                            col >= grid[0].length ||
+                            (placedWords[row][col] !== "" && placedWords[row][col] !== word[i])
+                        ) {
+                            break
+                        }
+
+                        // Store current state and place new character
+                        otherschars.push({ row, col, value: placedWords[row][col] })
+                        placedWords[row][col] = word[i]
                     }
-                    // If placing remaining words fails, remove the current word and try other positions
-                    removeWord(word, x, y, true);
-                    removeWord(word, x, y, false);
+
+                    // If word fits completely, try placing next word
+                    if (otherschars.length === word.length && addWords(words, currentInd + 1)) {
+                        return true
+                    }
+
+                    // Backtrack: restore previous state if placement fails
+                    otherschars.forEach((otherchar) => {
+                        placedWords[otherchar.row][otherchar.col] = otherchar.value
+                    })
+
+                    return false
+                }
+
+                // Try both x and y placements
+                if (directOfWord("x") || directOfWord("y")) {
+                    return true
                 }
             }
         }
-        return false;
-    };
-
-    // Helper function for trying word placement
-    function tryPlaceWordInDirection(word, x, y, isHorizontal) {
-        const placedPositions = [];
-        const length = word.length;
-
-        // Check if word fits in the chosen direction
-        for (let i = 0; i < length; i++) {
-            const row = isHorizontal ? x : x + i;
-            const col = isHorizontal ? y + i : y;
-
-            // Check bounds and compatibility
-            if (row >= grid.length || 
-                col >= grid[0].length || 
-                (placedWords[row][col] !== '' && placedWords[row][col] !== word[i])) {
-                // Revert any placed letters
-                placedPositions.forEach(({row, col}) => {
-                    placedWords[row][col] = '';
-                });
-                return false;
-            }
-
-            // Store position and current value
-            placedPositions.push({row, col});
-            placedWords[row][col] = word[i];
-        }
-
-        return true;
+        // No valid placement found for current word
+        return false
     }
-
-    // Helper function to remove a word from the puzzle
-    function removeWord(word, x, y, isHorizontal) {
-        const length = word.length;
-        
-        for (let i = 0; i < length; i++) {
-            const row = isHorizontal ? x : x + i;
-            const col = isHorizontal ? y + i : y;
-            
-            if (row < grid.length && col < grid[0].length) {
-                if (placedWords[row][col] === word[i]) {
-                    placedWords[row][col] = '';
-                }
-            }
-        }
-    }
-
-    // Function to replace words in the existing grid
-    function replaceWords(newWords) {
-        // Validate new words
-        if (!Array.isArray(newWords) || 
-            newWords.length < 3 || 
-            newWords.some((word) => typeof word !== 'string') ||
-            hasDuplicates(newWords) ||
-            newWords.length !== words.length) {
-            return 'Error';
-        }
-
-        // Clear the placed words grid while preserving walls
-        for (let x = 0; x < placedWords.length; x++) {
-            for (let y = 0; y < placedWords[0].length; y++) {
-                if (placedWords[x][y] !== '.') {
-                    placedWords[x][y] = '';
-                }
-            }
-        }
-
-        // Try placing the new words
-        if (!addWords(newWords)) {
-            return 'Error';
-        }
-
-        // Convert final grid to string and return
-        return placedWords.map((row) => row.join('')).join('\n');
-    }
-
-    // Try placing all words and handle result
+    
+    // Attempt to place all words
     if (!addWords(words)) {
-        return 'Error';
+        return "Error"
     }
 
-    // Convert final grid to string and return
-    const filledPuzzle = placedWords.map((row) => row.join('')).join('\n');
-    return filledPuzzle;
+    // Convert solution grid back to string format
+    const result = placedWords.map((row) => row.join("")).join("\n")
+    return result
 }
 
-// Helper function to check for duplicates in array
+// Helper function to detect duplicate elements in array
 function hasDuplicates(arr) {
-    return new Set(arr).size !== arr.length;
+    return (new Set(arr)).size !== arr.length;
 }
 
 module.exports = { crosswordSolver };
