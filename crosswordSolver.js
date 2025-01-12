@@ -28,7 +28,7 @@ function crosswordSolver(crossword, words) {
     }
 
     if (invalidCrossword || invalidWords) {
-        return 'Error: Invalid crossword format or words array';
+        return 'Error';
     }
 
     // Convert crossword into array
@@ -128,6 +128,9 @@ function crosswordSolver(crossword, words) {
         return false
     }
     
+    // Sort words by length (longest first)
+    words = words.sort((a, b) => b.length - a.length);
+
     // Attempt to place all words
     if (!addWords(words)) {
         return 'Error: Could not place all words';
@@ -140,7 +143,7 @@ function crosswordSolver(crossword, words) {
 
 // Helper function to detect duplicate elements in array
 function hasDuplicates(arr) {
-    return (new Set(arr)).size !== arr.length;
+    return (new Set(arr.map((item) => item.toLowerCase()))).size !== arr.length;
 }
 
 module.exports = { crosswordSolver };
