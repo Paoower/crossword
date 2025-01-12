@@ -8,14 +8,10 @@ function crosswordSolver(crossword, words) {
         words.length < 3 || 
         words.some((word) => typeof word !== 'string');
 
-    if (invalidCrossword || invalidWords) {
-        return 'Error';
-    }
-
     // Check for duplicates in words array
-    if (hasDuplicates(words)) {
+    if (Array.isArray(words) && hasDuplicates(words)) {
         return 'Error';
-    }
+    }   
 
     // Count start positions in crossword
     let startPositions = 0;
@@ -27,6 +23,15 @@ function crosswordSolver(crossword, words) {
     
     // Validate start positions match words length
     if (startPositions !== words.length) {
+        return 'Error';
+    }
+
+    if (invalidCrossword || invalidWords) {
+        return 'Error';
+    }
+
+    // Check for duplicates in words array
+    if (hasDuplicates(words)) {
         return 'Error';
     }
 
