@@ -60,9 +60,10 @@ Words:
 
 Solution:
 casa
-alan
-ciao
+i..l
 anta
+o..n
+
 
 Test 1 passed successfully!
 ```
